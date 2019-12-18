@@ -52,6 +52,7 @@ export default class App extends Component {
     "type": "REPOSITORY"
   }
 
+//Added number of commits, braches and license
   const GET_GITHUBDATA = gql`
   query($first: Int, $query: String!, $type: SearchType!)
   {
@@ -168,6 +169,7 @@ class DisplayGithubData extends App {
   }
 }
 
+//Shows extra information when pressed
 class Modal extends React.Component {
   render() {
     // Render nothing if the "show" prop is false
@@ -183,7 +185,7 @@ class Modal extends React.Component {
   }
 }
 
-
+//Changed to a component
 class ProjectListItem extends App {
 
   constructor(props) {
