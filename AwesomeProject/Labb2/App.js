@@ -5,22 +5,29 @@ import styles from './style.js'
 export default class HelloWorldApp extends Component {
   constructor(props) {
     super(props);
-    const img0 = require('./images/amex.png');
-    const img1 = require('./images/dinersclub.png');
-    const img2 = require('./images/visa.png');
-    const img3 = require('./images/mastercard.png');
-    const img4 = require('./images/discover.png');
+    const amex = require('./images/amex.png');
+    const visa = require('./images/visa.png');
+    const mastercard = require('./images/mastercard.png');
+    const discover = require('./images/discover.png');
     this.state = {
       myNumber: "#### #### #### ####",
       cardHolder: "Name Surname",
-      cardId: '0',
-      imgList: [img0, img1, img2, img3, img4],
+      cardId: 'visa',
+      //Fixed so each image has a name and also two textfields that will only be allowed nr/letters
+      imgList: {amex: amex, visa: visa, mastercard: mastercard, discover: discover},
+      cardName: '',
+      cardNr: '',
       selectedMonth: 'MM',
       selectedYear: 'YY',
       cardCVV: '',
+      cardLength: 16,
     };
 
+
+
+
     this.animatedValue = new Animated.Value(0);
+
     this.value = 0;
     this.animatedValue.addListener(({ value }) => {
       this.value = value;
@@ -28,19 +35,24 @@ export default class HelloWorldApp extends Component {
   }
 
 checkImage(id){
-    switch(id) {
-      case '3':
-        this.setState({cardId: '0'});
-      break;
-      case '4':
-        this.setState({cardId: '1'});
-      break;
-      case '5':
-        this.setState({cardId: '2'});
+  //Fixed so american express works and also sets cardId to a name rather than a number
+  firstNr = id.substring(0,1);
+  amexcard = id.substring(1);
 
+    switch(firstNr) {
+      case '3':   //American Express
+        if(amexcard == '7' || amexcard == '4'){
+          this.setState({cardId: 'amex', cardLength: 15});
+        }
       break;
-      case '6':
-        this.setState({cardId: '3'});
+      case '4': //Visa
+        this.setState({cardId: 'visa',  cardLength: 16});
+      break;
+      case '5': //Mastercard
+        this.setState({cardId: 'mastercard', cardLength: 16});
+      break;
+      case '6':  //Discover
+        this.setState({cardId: 'discover', cardLength: 16});
       break;
     }
   }
@@ -50,13 +62,15 @@ numberValid(text)
     let newText = '';
     let numbers = '0123456789';
     let newNr = '0';
+    let allowedCardNr = '';
 
-    for (var i=0; i < 16; i++) {
+    for (var i=0; i < this.state.cardLength; i++) {
       if(i%4 == 0)
       newText = newText + " ";
 
         if(i < text.length && numbers.indexOf(text[i]) > -1 ) {
             newText = newText + text[i];
+            allowedCardNr = allowedCardNr + text[i];    //Numbers that will be in input field without "#### #### #### ####"
         }
         else {
           newText = newText + '#';
@@ -65,10 +79,20 @@ numberValid(text)
 
     if(text.length > 0) {
       var nr = text[0];
+
+      if(nr == 3 && text.length > 1) {
+        var nextNr = text[1];
+        console.log(nextNr);
+        nr = nr + nextNr;
+      }
+
       this.checkImage(nr);
     }
+    else {    //defaults to visa whenever goes back to blank
+      this.setState({cardId: 'visa'});
+    }
 
-    this.setState({ myNumber: newText });
+    this.setState({ myNumber: newText, cardNr: allowedCardNr });
 }
 
 componentWillMount() {
@@ -84,7 +108,9 @@ componentWillMount() {
   this.backInterpolate = this.animatedValue.interpolate({
     inputRange: [0, 180],
     outputRange: ['180deg', '360deg']
-  })
+    })
+
+
 }
 
 flipCard() {
@@ -106,7 +132,7 @@ flipCard() {
 
 nameValid(text){
   let newName = '';
-  let letters = ' abcdefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let letters = ' abcdefghijklmnopqrstuvwxyzåäöABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ';
 
   for(let i = 0; i < text.length; i++) {
     if(letters.indexOf(text[i]) > -1 ) {
@@ -114,10 +140,34 @@ nameValid(text){
     }
   }
 
-  this.setState({ cardHolder: newName });
+  this.setState({ cardHolder: newName, cardName: newName });  //cardName is what will be written inside the textinput field
 }
 
+monthList = () =>{
+    var items = [];
 
+    for(var i = 1; i <= 12; i++) {
+        if(i < 10) {
+            items.push("0" + i.toString());
+        }
+        else
+       items.push(i.toString());
+    }
+
+    return( items.map((x,i) => {
+      return( <Picker.Item label={x} key={i} value={x}  />)} ));
+}
+
+yearList = () =>{
+    var items = [];
+    var year = new Date().getFullYear();
+
+    for(var i = 0; i <= 10; i++) {
+            items.push((year + i).toString());
+    }
+    return( items.map((x,i) => {
+      return( <Picker.Item label={x} key={i} value={x.substring(2)}  />)} ));
+}
 
 
   render() {
@@ -183,13 +233,15 @@ nameValid(text){
              style={styles.textInput}
              keyboardType='numeric'
              onChangeText={(text)=> this.numberValid(text)}
-             maxLength={16}  //setting limit of input
+             maxLength={this.state.cardLength}  //setting limit of input
+             value = {this.state.cardNr}
           />
           <Text>Card holder:</Text>
           <TextInput
              style={styles.textInput}
              onChangeText={(text)=> this.nameValid(text)}
              maxLength={50}  //setting limit of input
+             value = {this.state.cardName}
           />
         </View>
 
@@ -201,22 +253,14 @@ nameValid(text){
             <Text>CVV:</Text>
             </View>
             <View style = {styles.inputRow}>
+
+
             <Picker selectedValue={this.state.selectedMonth}
               style = {styles.pickerStyle}
               onValueChange={(itemValue, itemIndex) =>  this.setState({selectedMonth: itemValue})}
               mode={'dropdown'}>
-              <Picker.Item label="01" value="01" />
-              <Picker.Item label="02" value="02" />
-              <Picker.Item label="03" value="03" />
-              <Picker.Item label="04" value="04" />
-              <Picker.Item label="05" value="05" />
-              <Picker.Item label="06" value="06" />
-              <Picker.Item label="07" value="07" />
-              <Picker.Item label="08" value="08" />
-              <Picker.Item label="09" value="09" />
-              <Picker.Item label="10" value="10" />
-              <Picker.Item label="11" value="11" />
-              <Picker.Item label="12" value="12" />
+              { this.monthList() }
+
             </Picker>
 
             <Picker selectedValue={this.state.selectedYear}
@@ -224,14 +268,7 @@ nameValid(text){
               itemStyle = {styles.pickerItems}
               onValueChange={(itemValue, itemIndex) =>  this.setState({selectedYear: itemValue})}
               mode={'dropdown'}>
-              <Picker.Item label="2019" value="19" />
-              <Picker.Item label="2020" value="20" />
-              <Picker.Item label="2021" value="21" />
-              <Picker.Item label="2022" value="22" />
-              <Picker.Item label="2023" value="23" />
-              <Picker.Item label="2024" value="24" />
-              <Picker.Item label="2025" value="25" />
-              <Picker.Item label="2026" value="26" />
+               { this.yearList() }
             </Picker>
 
 
@@ -249,7 +286,7 @@ nameValid(text){
         </View>
         <TouchableOpacity
           style={styles.loginScreenButton}
-          onPress={() => Alert.alert('Button with adjusted color pressed')}
+          onPress={() => Alert.alert('We now have your credit card credentials hehe')}
           underlayColor='#fff'>
           <Text style={styles.loginText}>Submit</Text>
         </TouchableOpacity>
