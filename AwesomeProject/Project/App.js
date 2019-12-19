@@ -8,7 +8,11 @@ import {
   Text,
   StatusBar,
   Image,
+  Button,
+  Alert,
+  TouchableOpacity
 } from 'react-native';
+import { createStackNavigator } from 'react-navigation-stack';
 
 
 
@@ -31,7 +35,9 @@ export default class App extends Component {
     return (
         <SafeAreaView style={styles.container}>
           <Image source={logo} style={styles.logo}/>
-          <Carousel MovieData = {movieData} DisplayNumber = {4}/>
+          <View style={styles.carouselContainer}>
+            <Carousel MovieData = {movieData} DisplayNumber = {4}/>
+          </View>
         </SafeAreaView>
 
     );
@@ -43,56 +49,82 @@ class Carousel extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      itemsToShow: {},
+      index: 0,
+
     };
     this.loadData = this.loadData.bind(this);
   }
 
-  loadData() {
+  loadData(index) {
     let data =[];
-    console.log(this.props.DisplayNumber);
-    if(this.props.MovieData.length >= this.props.DisplayNumber) {
-      for(let i = 0; i < this.props.DisplayNumber; i++) {
+
+    if(this.props.MovieData.length >= this.props.DisplayNumber + index) {
+      for(let i = index; i < this.props.DisplayNumber + index; i++) {
         data.push(this.props.MovieData[i]);
 
       }
       return data;
     }
   }
-/*
-  ComponentDidMount() {
-    this.loadData();
+
+  changeIndexBackwards(){
+    var newIndex = this.state.index - this.props.DisplayNumber;
+      this.setState({index: newIndex})
   }
-*/
-  /*
-  this.state.itemsToShow.map(function(item) {
-    return <MovieItem MovieData = {item} />
-    })
-  */
+
+  changeIndexForward(){
+    this.refs.touch.setOpacityTo(0.8, 1);
+    var newIndex = this.state.index + this.props.DisplayNumber;
+      this.setState({index: newIndex})
+  }
 
   render() {
-    var namesList = this.loadData().map(function(item) {
-      return <MovieItem MovieData = {item} />
+    var numberOfElements = this.props.DisplayNumber;  //To make sure elements wont appear too small
+    var displayData = (numberOfElements > 8 || numberOfElements < 3) ?
+    <Text style = {styles.title}>Use a display number between 3 and 8! Your display number was: {numberOfElements}</Text>
+    : this.loadData(this.state.index).map(function(item) {
+      return <MovieItem MovieData = {item} DisplayNumber = {numberOfElements} />
       });
     return (
-      <View style={styles.carousel}>
-         {namesList}
-      </View>
+
+        <View style={styles.carousel} >
+          <TouchableOpacity
+           style={this.state.index == 0 ? styles.disabledButton : styles.buttonStyle}
+           onPress={() => this.changeIndexBackwards()}
+           disabled = {this.state.index == 0 ? true : false}
+           activeOpacity={1.0}
+           ref="touch"
+           >
+           <Text style = {styles.title}> ◀ </Text>
+         </TouchableOpacity>
+          <View style={styles.allItems}>
+             {displayData}
+          </View>
+          <TouchableOpacity
+           style={this.state.index > this.props.MovieData.length - this.props.DisplayNumber ? styles.disabledButton : styles.buttonStyle}
+           onPress={() => this.changeIndexForward()}
+           disabled = {this.state.index > this.props.MovieData.length - this.props.DisplayNumber ? true : false}
+           activeOpacity={1.0}
+           ref="touch"
+           >
+           <Text style = {styles.title}> ▶ </Text>
+         </TouchableOpacity>
+       </View>
     );
   }
 }
 
 class MovieItem extends Carousel {
   render () {
-    console.log(this.props.MovieData.poster);
+
     return (
-      <View style={styles.item}>
+
+      <TouchableOpacity onPress={()=>this.moveToAddNewCustomer() style={[styles.item, {width: 100/this.props.DisplayNumber+'%'}]}>
       <Image source={{uri: this.props.MovieData.poster}} style={styles.itemImage}/>
         <Text style={styles.title}>
         {this.props.MovieData.title}
         </Text>
-
-      </View>
+      </TouchableOpacity>
     );
   }
 }
@@ -103,7 +135,19 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: 'black',
   },
+  carouselContainer: {
+    width: '100%',
+    height: '15%',
+  },
   carousel: {
+    width: '100%',
+    height: '100%',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  allItems: {
     width: '100%',
     height: '100%',
     flex: 1,
@@ -116,13 +160,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
   },
+  buttonStyle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:'red',
+    borderRadius: 4,
+    opacity: 0.8,
+  },
+  disabledButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:'red',
+    borderRadius: 4,
+      opacity: 0.2,
+  },
   logo: {
     width: '100%',
     height: '30%',
   },
   item: {
     width: '25%',
-    height: '25%',
+    height: '100%',
     padding: 5,
   },
   itemImage: {
