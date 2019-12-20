@@ -57,7 +57,10 @@ export default class App extends Component {
 
     return (
         <SafeAreaView style={styles.container}>
+          <View style={styles.header}>
           <Image source={logo} style={styles.logo}/>
+          <WishList />
+          </View>
           <Carousel MovieData = {this.state.data} DisplayNumber = {4} star={true} selectedData={this.selectedData}/>
         </SafeAreaView>
 
@@ -68,7 +71,10 @@ export default class App extends Component {
 class WishList extends Component {
 
   render() {
-    return( <Text>Hej</Text>
+    return(
+      <View style={WishListStyles.wishListIcon}>
+        <Text style={WishListStyles.star}>★</Text>
+      </View>
 
     );
   }
@@ -94,7 +100,6 @@ class Carousel extends Component {
     if(this.props.MovieData.length >= this.props.DisplayNumber + index) {
       for(let i = index; i < this.props.DisplayNumber + index; i++) {
         data.push(this.props.MovieData[i]);
-
       }
       return data;
     }
@@ -199,6 +204,7 @@ class Modal extends React.Component {
             </TouchableOpacity>
             : null }
           </View>
+
           <Text style={styles.title}>
           {"\n\nDirector: " + this.props.data.director + "\n\n"}
           {this.props.data.description}
@@ -222,12 +228,39 @@ class MovieItem extends Carousel {
   }
 }
 
+const WishListStyles = StyleSheet.create({
+  wishListIcon: {
+    width: 50,
+    height: 50,
+    margin: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  star: {
+    fontSize: 40,
+    color: 'white',
+    opacity: 0.8,
+  },
+  starPressed: {
+    fontSize: 40,
+    color: 'red',
+    opacity: 0.8,
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: '100%',
     backgroundColor: 'black',
     flex: 1,
+  },
+  header: {
+    width: '100%',
+    height: '20%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   carouselContainer: {
     width: '100%',
@@ -249,6 +282,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: 'white',
+    fontSize: 14,
+    padding: 5,
   },
   buttonStyle: {
     alignItems: 'center',
@@ -267,13 +302,16 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   logo: {
-    width: '100%',
-    height: '30%',
+    width: '80%',
+    height: '100%',
+    resizeMode: 'contain',
   },
   item: {
     width: '100%',
     height: '100%',
     padding: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   itemImage: {
     width: '100%',
