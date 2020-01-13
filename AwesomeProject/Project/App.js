@@ -49,20 +49,14 @@ export default class App extends Component {
 
   selectedData(selectedElement) {
     var i = selectedElement.index;
-    var starredIndex = -1;
-
-    if (this.state.data[i].isStarred) {   //Remove index from starred
-      starredIndex = this.state.starred.indexOf(i);
-      if(starredIndex > -1) {
-       this.state.starred.splice(starredIndex, 1);
-      }
+    //Remove element from starred & double check that the array contains i
+    if (this.state.data[i].isStarred && this.state.starred.indexOf(selectedElement) !== -1) {
+      this.setState({starred: this.state.starred.filter((j) => j.index !== selectedElement.index)}) //Remove the index that is equals to i
     }
-    else {  //Add index to starred
-
-     this.setState({starred: [...this.state.starred, i]});
+    else {  //Add element to starred
+     this.setState({starred: [...this.state.starred, selectedElement]});
     }
     this.state.data[i].isStarred = !this.state.data[i].isStarred;
-    this.forceUpdate();
   }
 
   render() {
@@ -70,10 +64,10 @@ export default class App extends Component {
     const logo = require('./images/netflix.png');
 
     return (
-        <SafeAreaView style={styles.container}>
-          <View style={styles.header}>
-           <Image source={logo} style={styles.logo}/>
-           <WishList data={this.state.data} starred={this.state.starred} selectedData={this.selectedData}/>
+        <SafeAreaView style={CarouselStyle.container}>
+          <View style={CarouselStyle.header}>
+           <Image source={logo} style={CarouselStyle.logo}/>
+           <WishList starred={this.state.starred} selectedData={this.selectedData}/>
           </View>
           <Carousel data = {this.state.data} displayNumber = {4} star={true} selectedData={this.selectedData}/>
         </SafeAreaView>
@@ -90,36 +84,21 @@ class WishList extends Component {
       windowIsOpen: false,
     };
     this.toggleWindow = this.toggleWindow.bind(this);
-    this.loadData = this.loadData.bind(this);
   }
 
   toggleWindow() {
    this.setState({windowIsOpen: !this.state.windowIsOpen})
-   console.log(this.state.windowIsOpen)
-  }
-
-  loadData() {
-   let dataToReturn = [];
-   let i = -1;
-
-   for(let j = 0; j < this.props.starred.length; j++) {
-    i = this.props.starred[j];
-    dataToReturn.push(this.props.data[i]);
-   }
-
-   return dataToReturn;
   }
 
   render() {
    var selectedData = this.props.selectedData;
-   var displayData = this.loadData().map(function(item) {
-    console.log(item);
-    return <View><Text style={WishListStyles.header}>{item.title}</Text></View>
+   var displayData = this.props.starred.map(function(item) {
+    return <WishItem item={item} selectedData ={selectedData}/>
    });
     return(
      <View>
        <View style={WishListStyles.wishListIcon}>
-       <StarButton windowIsOpen={this.state.windowIsOpen} onPressFunction={this.toggleWindow}/>
+       <StarButton isPressed={this.state.windowIsOpen} onPressFunction={this.toggleWindow}/>
        </View>
        <Modal
           animationType="fade"
@@ -133,7 +112,7 @@ class WishList extends Component {
           <View style={WishListStyles.headerView}>
            <Text style={WishListStyles.header}>Favourites</Text>
            <View style = {WishListStyles.wishListIcon}>
-            <StarButton windowIsOpen={this.state.windowIsOpen} onPressFunction={this.toggleWindow}/>
+            <StarButton isPressed={this.state.windowIsOpen} onPressFunction={this.toggleWindow}/>
            </View>
           </View>
           <ScrollView style={WishListStyles.list}>
@@ -147,6 +126,22 @@ class WishList extends Component {
   }
 }
 
+class WishItem extends WishList {
+
+  render () {
+    return (
+      <View>
+          <View style = {WishListStyles.item}>
+           <Image source={{uri: this.props.item.poster}} style={WishListStyles.itemImage}/>
+           <Text style={WishListStyles.itemText}>{this.props.item.title}</Text>
+           <StarButton isPressed = {true} onPressFunction={() => this.props.selectedData(this.props.item)}/>
+          </View>
+          <View style={WishListStyles.bottomBorder}/>
+      </View>
+    );
+  }
+}
+
 class StarButton extends Component {
  render() {
   return (
@@ -156,7 +151,7 @@ class StarButton extends Component {
     activeOpacity={0.6}
     ref="star"
     >
-     <Text style={this.props.windowIsOpen ? WishListStyles.starPressed : WishListStyles.star}>★</Text>
+     <Text style={this.props.isPressed ? WishListStyles.starPressed : WishListStyles.star}>★</Text>
     </TouchableOpacity>
    </View>
   );
@@ -204,8 +199,6 @@ class Carousel extends Component {
   }
 
   selectedItem(data) {
-    //console.log(data);
-    //console.log(this.state.selectedItemData);
 
     if(Object.entries(this.state.selectedItemData).length === 0) {
       this.setState({selectedItemData: data});
@@ -224,33 +217,33 @@ class Carousel extends Component {
     var numberOfElements = this.props.displayNumber;  //To make sure elements won't appear too small
     var selectedItem = this.selectedItem;
     var displayData = (numberOfElements > 8 || numberOfElements < 3) ?
-    <Text style = {styles.title}>Use a display number between 3 and 8! Your display number was: {numberOfElements}</Text>
+    <Text style = {CarouselStyle.title}>Use a display number between 3 and 8! Your display number was: {numberOfElements}</Text>
     : this.loadData(this.state.index).map(function(item) {
-      return <Item data = {item} displayNumber = {numberOfElements} selectedItem = {selectedItem}/>
+      return <CarouselItem data = {item} displayNumber = {numberOfElements} selectedItem = {selectedItem}/>
       });
     return (
-        <View style={styles.carouselContainer}>
-          <View style={styles.carousel} >
+        <View style={CarouselStyle.carouselContainer}>
+          <View style={CarouselStyle.carousel} >
             <TouchableOpacity
-             style={this.state.index == 0 ? styles.disabledButton : styles.buttonStyle}
+             style={this.state.index == 0 ? CarouselStyle.disabledButton : CarouselStyle.buttonStyle}
              onPress={() => this.changeIndexBackwards()}
              disabled = {this.state.index == 0 ? true : false}
              activeOpacity={1.0}
              ref="touch"
              >
-             <Text style = {styles.title}> ◀ </Text>
+             <Text style = {CarouselStyle.buttonArrow}> ◀ </Text>
            </TouchableOpacity>
-            <View style={styles.allItems}>
+            <View style={CarouselStyle.allItems}>
                {displayData}
             </View>
             <TouchableOpacity
-             style={this.state.index > this.props.data.length - this.props.displayNumber ? styles.disabledButton : styles.buttonStyle}
+             style={this.state.index > this.props.data.length - this.props.displayNumber ? CarouselStyle.disabledButton : CarouselStyle.buttonStyle}
              onPress={() => this.changeIndexForward()}
              disabled = {this.state.index > this.props.data.length - this.props.displayNumber ? true : false}
              activeOpacity={1.0}
              ref="touch"
              >
-             <Text style = {styles.title}> ▶ </Text>
+             <Text style = {CarouselStyle.buttonArrow}> ▶ </Text>
            </TouchableOpacity>
          </View>
          <CarouselModal show={this.state.isOpen}
@@ -264,31 +257,24 @@ class Carousel extends Component {
   }
 }
 
-class CarouselModal extends React.Component {
+class CarouselModal extends Carousel {
   render() {
     // Render nothing if the "show" prop is false
     if(!this.props.show) {
       return null;
     }
     return (
-        <ScrollView style={styles.carouselModalStyle}>
-          <View style={styles.titleBar}>
-            <Text style={styles.selectedTitle}>
+        <ScrollView style={CarouselStyle.carouselModalStyle}>
+          <View style={CarouselStyle.titleBar}>
+            <Text style={CarouselStyle.selectedTitle}>
             {this.props.data.title}
             </Text>
             { this.props.star ?
-            <TouchableOpacity
-             style={styles.starBox}
-             onPress={() => this.props.selectedData(this.props.data)}
-             disabled = {!this.props.star ? true : false}
-             activeOpacity={1.0}
-             >
-            <Text style={this.props.data.isStarred ? WishListStyles.starPressed : WishListStyles.star}>★ </Text>
-            </TouchableOpacity>
+            <StarButton onPressFunction={() => this.props.selectedData(this.props.data)} isPressed={this.props.data.isStarred} />
             : null }
           </View>
 
-          <Text style={styles.title}>
+          <Text style={CarouselStyle.title}>
           {"\n\nDirector: " + this.props.data.director + "\n\n"}
           {this.props.data.description}
           </Text>
@@ -297,13 +283,13 @@ class CarouselModal extends React.Component {
   }
 }
 
-class Item extends Carousel {
+class CarouselItem extends Carousel {
 
   render () {
     return (
-      <TouchableOpacity onPress={() => this.props.selectedItem(this.props.data)} style={[styles.item, {width: 100/this.props.displayNumber+'%'}]}>
-      <Image source={{uri: this.props.data.poster}} style={styles.itemImage}/>
-        <Text style={styles.title}>
+      <TouchableOpacity onPress={() => this.props.selectedItem(this.props.data)} style={[CarouselStyle.item, {width: 100/this.props.displayNumber+'%'}]}>
+      <Image source={{uri: this.props.data.poster}} style={CarouselStyle.itemImage}/>
+        <Text style={CarouselStyle.title}>
         {this.props.data.title}
         </Text>
       </TouchableOpacity>
@@ -338,6 +324,7 @@ const WishListStyles = StyleSheet.create({
   },
   list: {
    color: 'white',
+   backgroundColor: 'black',
   },
   header: {
    color: 'white',
@@ -351,9 +338,34 @@ const WishListStyles = StyleSheet.create({
    alignItems: 'center',
    justifyContent: 'space-between',
   },
+  item: {
+   flexDirection: 'row',
+   height: 150,
+   width: '100%',
+   alignItems: 'center',
+   padding: 0,
+  },
+  bottomBorder: {
+   height: 1,
+   width: '100%',
+   backgroundColor: '#434343',
+  },
+  itemText: {
+   flex: 1,
+   color: 'white',
+   fontSize: 20,
+   paddingLeft: 15,
+   flexWrap: 'wrap',
+
+  },
+  itemImage: {
+   height: '100%',
+   width: '20%',
+   resizeMode: 'contain',
+  }
 });
 
-const styles = StyleSheet.create({
+const CarouselStyle = StyleSheet.create({
   container: {
     width: '100%',
     height: '100%',
@@ -386,9 +398,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   title: {
+    flex: 1,
     color: 'white',
     fontSize: 14,
     padding: 5,
+    flexWrap: 'wrap',
   },
   buttonStyle: {
     alignItems: 'center',
@@ -397,6 +411,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     opacity: 0.8,
     height: '100%',
+  },
+  buttonArrow: {
+   color: 'white',
   },
   disabledButton: {
     alignItems: 'center',
@@ -431,20 +448,16 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   selectedTitle: {
+    flex:1,
     fontSize: 40,
     color: 'white',
+    flexWrap: 'wrap',
   },
   titleBar: {
     width: '100%',
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
-  starBox: {
-    width: 40,
-    height: '100%',
-    justifyContent: 'center',
-  },
-
 });
