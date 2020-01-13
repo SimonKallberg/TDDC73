@@ -10,7 +10,8 @@ import {
   Image,
   Button,
   Alert,
-  TouchableOpacity
+  TouchableOpacity,
+  Modal
 } from 'react-native';
 
 function getData() {
@@ -41,14 +42,27 @@ export default class App extends Component {
     super(props);
     this.state = {
       data: getData(),
+      starred: [],
     };
     this.selectedData = this.selectedData.bind(this);
   }
 
   selectedData(selectedElement) {
     var i = selectedElement.index;
+    var starredIndex = -1;
+
+    if (this.state.data[i].isStarred) {   //Remove index from starred
+      starredIndex = this.state.starred.indexOf(i);
+      if(starredIndex > -1) {
+       this.state.starred.splice(starredIndex, 1);
+      }
+    }
+    else {  //Add index to starred
+
+     this.setState({starred: [...this.state.starred, i]});
+    }
     this.state.data[i].isStarred = !this.state.data[i].isStarred;
-    this.forceUpdate()
+    this.forceUpdate();
   }
 
   render() {
@@ -58,10 +72,10 @@ export default class App extends Component {
     return (
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
-          <Image source={logo} style={styles.logo}/>
-          <WishList />
+           <Image source={logo} style={styles.logo}/>
+           <WishList data={this.state.data} starred={this.state.starred} selectedData={this.selectedData}/>
           </View>
-          <Carousel MovieData = {this.state.data} DisplayNumber = {4} star={true} selectedData={this.selectedData}/>
+          <Carousel data = {this.state.data} displayNumber = {4} star={true} selectedData={this.selectedData}/>
         </SafeAreaView>
 
     );
@@ -70,14 +84,83 @@ export default class App extends Component {
 
 class WishList extends Component {
 
-  render() {
-    return(
-      <View style={WishListStyles.wishListIcon}>
-        <Text style={WishListStyles.star}>★</Text>
-      </View>
+  constructor(props) {
+    super(props);
+    this.state = {
+      windowIsOpen: false,
+    };
+    this.toggleWindow = this.toggleWindow.bind(this);
+    this.loadData = this.loadData.bind(this);
+  }
 
+  toggleWindow() {
+   this.setState({windowIsOpen: !this.state.windowIsOpen})
+   console.log(this.state.windowIsOpen)
+  }
+
+  loadData() {
+   let dataToReturn = [];
+   let i = -1;
+
+   for(let j = 0; j < this.props.starred.length; j++) {
+    i = this.props.starred[j];
+    dataToReturn.push(this.props.data[i]);
+   }
+
+   return dataToReturn;
+  }
+
+  render() {
+   var selectedData = this.props.selectedData;
+   var displayData = this.loadData().map(function(item) {
+    console.log(item);
+    return <View><Text style={WishListStyles.header}>{item.title}</Text></View>
+   });
+    return(
+     <View>
+       <View style={WishListStyles.wishListIcon}>
+       <StarButton windowIsOpen={this.state.windowIsOpen} onPressFunction={this.toggleWindow}/>
+       </View>
+       <Modal
+          animationType="fade"
+          transparent={false}
+          visible={this.state.windowIsOpen}
+          onRequestClose={() => {
+          }}
+          >
+        <View style={WishListStyles.background}>
+         <SafeAreaView style={WishListStyles.background}>
+          <View style={WishListStyles.headerView}>
+           <Text style={WishListStyles.header}>Favourites</Text>
+           <View style = {WishListStyles.wishListIcon}>
+            <StarButton windowIsOpen={this.state.windowIsOpen} onPressFunction={this.toggleWindow}/>
+           </View>
+          </View>
+          <ScrollView style={WishListStyles.list}>
+          {displayData}
+          </ScrollView>
+         </SafeAreaView>
+        </View>
+       </Modal>
+     </View>
     );
   }
+}
+
+class StarButton extends Component {
+ render() {
+  return (
+   <View style={WishListStyles.wishListIcon}>
+   <TouchableOpacity
+    onPress={this.props.onPressFunction}
+    activeOpacity={0.6}
+    ref="star"
+    >
+     <Text style={this.props.windowIsOpen ? WishListStyles.starPressed : WishListStyles.star}>★</Text>
+    </TouchableOpacity>
+   </View>
+  );
+ }
 }
 
 class Carousel extends Component {
@@ -86,37 +169,37 @@ class Carousel extends Component {
     super(props);
     this.state = {
       index: 0,
-      modalIsOpen: false,
+      carouselModalIsOpen: false,
       selectedItemData: {},
     };
     this.loadData = this.loadData.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
+    this.toggleCarouselModal = this.toggleCarouselModal.bind(this);
     this.selectedItem = this.selectedItem.bind(this);
   }
 
   loadData(index) {
     let data =[];
 
-    if(this.props.MovieData.length >= this.props.DisplayNumber + index) {
-      for(let i = index; i < this.props.DisplayNumber + index; i++) {
-        data.push(this.props.MovieData[i]);
+    if(this.props.data.length >= this.props.displayNumber + index) {
+      for(let i = index; i < this.props.displayNumber + index; i++) {
+        data.push(this.props.data[i]);
       }
       return data;
     }
   }
 
   changeIndexBackwards(){
-    var newIndex = this.state.index - this.props.DisplayNumber;
+    var newIndex = this.state.index - this.props.displayNumber;
       this.setState({index: newIndex})
   }
 
   changeIndexForward(){
     this.refs.touch.setOpacityTo(0.8, 1);
-    var newIndex = this.state.index + this.props.DisplayNumber;
+    var newIndex = this.state.index + this.props.displayNumber;
       this.setState({index: newIndex})
   }
 
-  toggleModal() {
+  toggleCarouselModal() {
     this.setState({isOpen: !this.state.isOpen});
   }
 
@@ -126,10 +209,10 @@ class Carousel extends Component {
 
     if(Object.entries(this.state.selectedItemData).length === 0) {
       this.setState({selectedItemData: data});
-      this.toggleModal();
+      this.toggleCarouselModal();
     }
     else if(this.state.selectedItemData === data) {
-      this.toggleModal();
+      this.toggleCarouselModal();
       this.setState({selectedItemData: {}});
     }
     else {
@@ -138,12 +221,12 @@ class Carousel extends Component {
   }
 
   render() {
-    var numberOfElements = this.props.DisplayNumber;  //To make sure elements won't appear too small
-    var functionHandle = this.selectedItem;
+    var numberOfElements = this.props.displayNumber;  //To make sure elements won't appear too small
+    var selectedItem = this.selectedItem;
     var displayData = (numberOfElements > 8 || numberOfElements < 3) ?
     <Text style = {styles.title}>Use a display number between 3 and 8! Your display number was: {numberOfElements}</Text>
     : this.loadData(this.state.index).map(function(item) {
-      return <MovieItem MovieData = {item} DisplayNumber = {numberOfElements} selectedItem = {functionHandle}/>
+      return <Item data = {item} displayNumber = {numberOfElements} selectedItem = {selectedItem}/>
       });
     return (
         <View style={styles.carouselContainer}>
@@ -161,17 +244,17 @@ class Carousel extends Component {
                {displayData}
             </View>
             <TouchableOpacity
-             style={this.state.index > this.props.MovieData.length - this.props.DisplayNumber ? styles.disabledButton : styles.buttonStyle}
+             style={this.state.index > this.props.data.length - this.props.displayNumber ? styles.disabledButton : styles.buttonStyle}
              onPress={() => this.changeIndexForward()}
-             disabled = {this.state.index > this.props.MovieData.length - this.props.DisplayNumber ? true : false}
+             disabled = {this.state.index > this.props.data.length - this.props.displayNumber ? true : false}
              activeOpacity={1.0}
              ref="touch"
              >
              <Text style = {styles.title}> ▶ </Text>
            </TouchableOpacity>
          </View>
-         <Modal show={this.state.isOpen}
-           onClose={this.toggleModal}
+         <CarouselModal show={this.state.isOpen}
+           onClose={this.toggleCarouselModal}
            data = {this.state.selectedItemData}
            selectedData = {this.props.selectedData}
            star = {this.props.star}
@@ -181,14 +264,14 @@ class Carousel extends Component {
   }
 }
 
-class Modal extends React.Component {
+class CarouselModal extends React.Component {
   render() {
     // Render nothing if the "show" prop is false
     if(!this.props.show) {
       return null;
     }
     return (
-        <ScrollView style={styles.modalStyle}>
+        <ScrollView style={styles.carouselModalStyle}>
           <View style={styles.titleBar}>
             <Text style={styles.selectedTitle}>
             {this.props.data.title}
@@ -200,7 +283,7 @@ class Modal extends React.Component {
              disabled = {!this.props.star ? true : false}
              activeOpacity={1.0}
              >
-            <Text style={this.props.data.isStarred ? styles.starPressed : styles.star}>★ </Text>
+            <Text style={this.props.data.isStarred ? WishListStyles.starPressed : WishListStyles.star}>★ </Text>
             </TouchableOpacity>
             : null }
           </View>
@@ -214,14 +297,14 @@ class Modal extends React.Component {
   }
 }
 
-class MovieItem extends Carousel {
+class Item extends Carousel {
 
   render () {
     return (
-      <TouchableOpacity onPress={() => this.props.selectedItem(this.props.MovieData)} style={[styles.item, {width: 100/this.props.DisplayNumber+'%'}]}>
-      <Image source={{uri: this.props.MovieData.poster}} style={styles.itemImage}/>
+      <TouchableOpacity onPress={() => this.props.selectedItem(this.props.data)} style={[styles.item, {width: 100/this.props.displayNumber+'%'}]}>
+      <Image source={{uri: this.props.data.poster}} style={styles.itemImage}/>
         <Text style={styles.title}>
-        {this.props.MovieData.title}
+        {this.props.data.title}
         </Text>
       </TouchableOpacity>
     );
@@ -245,6 +328,28 @@ const WishListStyles = StyleSheet.create({
     fontSize: 40,
     color: 'red',
     opacity: 0.8,
+  },
+  background: {
+    flex: 1,
+    height: '100%',
+    width: '100%',
+    backgroundColor: 'black',
+    color: 'white',
+  },
+  list: {
+   color: 'white',
+  },
+  header: {
+   color: 'white',
+   fontSize: 50,
+   margin: 40,
+  },
+  headerView: {
+   width: '100%',
+   height: '20%',
+   flexDirection: 'row',
+   alignItems: 'center',
+   justifyContent: 'space-between',
   },
 });
 
@@ -320,7 +425,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     resizeMode: 'contain',
   },
-  modalStyle: {
+  carouselModalStyle: {
     width: '100%',
     height: '100%',
     padding: 20,
@@ -341,14 +446,5 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
   },
-  star: {
-    fontSize: 40,
-    color: 'white',
-    opacity: 0.8,
-  },
-  starPressed: {
-    fontSize: 40,
-    color: 'red',
-    opacity: 0.8,
-  },
+
 });
