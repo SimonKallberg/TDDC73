@@ -32,7 +32,7 @@ export class WishList extends Component {
   render() {
    var selectedData = this.props.selectedData;
    var displayData = this.props.starred.map(function(item) {
-    return <WishItem item={item} selectedData ={selectedData}/>
+    return <WishItem key={item.index} item={item} selectedData ={selectedData}/>
    });
     return(
      <View>
@@ -80,7 +80,6 @@ class WishItem extends WishList {
     );
   }
 }
-
 
 const WishListStyle = StyleSheet.create({
   background: {

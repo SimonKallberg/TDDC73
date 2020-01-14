@@ -35,6 +35,7 @@ function getData() {
     currElement["isStarred"] = false;
     return currElement;
   });
+  //console.log(movieData.length);
   return movieData;
 }
 
@@ -59,6 +60,7 @@ export default class App extends Component {
      this.setState({starred: [...this.state.starred, selectedElement]});
     }
     this.state.data[i].isStarred = !this.state.data[i].isStarred;
+    //console.log(i);
   }
 
   render() {

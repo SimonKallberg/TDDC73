@@ -76,7 +76,7 @@ export class Carousel extends Component {
     var displayData = (numberOfElements > 8 || numberOfElements < 3) ?
     <Text style = {CarouselStyle.text}>Use a display number between 3 and 8! Your display number was: {numberOfElements}</Text>
     : this.loadData(this.state.index).map(function(item) {
-      return <CarouselItem data = {item} displayNumber = {numberOfElements} selectedItem = {selectedItem}/>
+      return <CarouselItem key={item.index} data = {item} displayNumber = {numberOfElements} selectedItem = {selectedItem}/>
       });
     return (
         <View style={CarouselStyle.carouselContainer}>
@@ -87,6 +87,7 @@ export class Carousel extends Component {
              disabled = {this.state.index == 0 ? true : false}
              activeOpacity={1.0}
              ref="touch"
+             testID='backwardsButton'
              >
              <Text style = {CarouselStyle.buttonArrow}> ◀ </Text>
            </TouchableOpacity>
@@ -99,6 +100,7 @@ export class Carousel extends Component {
              disabled = {this.state.index > this.props.data.length - this.props.displayNumber ? true : false}
              activeOpacity={1.0}
              ref="touch"
+             testID='forwardsButton'
              >
              <Text style = {CarouselStyle.buttonArrow}> ▶ </Text>
            </TouchableOpacity>
@@ -120,8 +122,9 @@ class CarouselModal extends Carousel {
     if(!this.props.show) {
       return null;
     }
+    var id = "modal" + this.props.data.index.toString();
     return (
-        <ScrollView style={CarouselStyle.carouselModalStyle}>
+        <ScrollView style={CarouselStyle.carouselModalStyle} testID={id}>
           <View style={CarouselStyle.titleBar}>
             <Text style={CarouselStyle.title}>
             {this.props.data.title}
@@ -145,8 +148,10 @@ class CarouselModal extends Carousel {
 class CarouselItem extends Carousel {
 
   render () {
+   var id = this.props.data.index.toString();
+
     return (
-      <TouchableOpacity onPress={() => this.props.selectedItem(this.props.data)} style={[CarouselStyle.item, {width: 100/this.props.displayNumber+'%'}]}>
+      <TouchableOpacity testID={id} onPress={() => this.props.selectedItem(this.props.data)} style={[CarouselStyle.item, {width: 100/this.props.displayNumber+'%'}]}>
       <Image source={{uri: this.props.data.image}} style={CarouselStyle.itemImage}/>
         <Text style={CarouselStyle.previewTitle}>
         {this.props.data.title}
